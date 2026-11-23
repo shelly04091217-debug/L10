@@ -1,0 +1,1034 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>去農場玩（群～假）— 電腦橫式生字造詞互動簡報</title>
+<style>
+  :root {
+    --sky-top: #E9F5E1;
+    --sky-bottom: #F7FBF3;
+    --hill-light: #A5D04A;
+    --hill-dark: #6E9E35;
+    --card-border: #1A1A1A;
+    --word-red: #D62828;
+    --text-black: #1A1A1A;
+  }
+
+  * {
+    box-sizing: border-box;
+    font-family: "BiauKai", "DFKai-SB", "標楷體", "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+    user-select: none;
+  }
+
+  body {
+    margin: 0;
+    padding: 0;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    background: linear-gradient(180deg, var(--sky-top) 0%, var(--sky-bottom) 65%, #DDF0C8 100%);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+
+  /* 牧場背景裝飾（青草雙層山坡 + 白雲） */
+  .pasture-bg {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    overflow: hidden;
+  }
+  .cloud {
+    position: absolute;
+    background: rgba(255, 255, 255, 0.85);
+    border-radius: 999px;
+  }
+  .cloud-1 { width: 190px; height: 54px; top: 64px; left: 6%; }
+  .cloud-1::before { content: ""; position: absolute; width: 85px; height: 85px; background: inherit; border-radius: 50%; top: -38px; left: 30px; }
+  .cloud-1::after { content: ""; position: absolute; width: 65px; height: 65px; background: inherit; border-radius: 50%; top: -24px; right: 28px; }
+
+  .cloud-2 { width: 220px; height: 58px; top: 82px; right: 8%; }
+  .cloud-2::before { content: ""; position: absolute; width: 90px; height: 90px; background: inherit; border-radius: 50%; top: -40px; left: 40px; }
+  .cloud-2::after { content: ""; position: absolute; width: 70px; height: 70px; background: inherit; border-radius: 50%; top: -25px; right: 32px; }
+
+  .hill-back {
+    position: absolute;
+    bottom: -90px;
+    left: -10%;
+    width: 75%;
+    height: 260px;
+    background: var(--hill-light);
+    border-radius: 50% 50% 0 0;
+  }
+  .hill-front {
+    position: absolute;
+    bottom: -110px;
+    right: -10%;
+    width: 85%;
+    height: 250px;
+    background: var(--hill-dark);
+    border-radius: 50% 50% 0 0;
+  }
+
+  /* 頂部控制列 */
+  .top-bar {
+    position: relative;
+    z-index: 20;
+    background: rgba(255, 255, 255, 0.96);
+    border-bottom: 4px solid var(--card-border);
+    padding: 8px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  .top-row-main {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .lesson-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 19px;
+    font-weight: bold;
+    color: #2E5A1C;
+    white-space: nowrap;
+  }
+
+  .group-pills {
+    display: flex;
+    gap: 6px;
+  }
+  .group-pill {
+    border: 2.5px solid var(--card-border);
+    background: #F3F4F6;
+    border-radius: 999px;
+    padding: 3px 11px;
+    font-size: 13px;
+    font-weight: bold;
+    cursor: pointer;
+    font-family: "Microsoft JhengHei", sans-serif;
+  }
+  .group-pill.active {
+    background: #A5D04A;
+    color: #1A1A1A;
+  }
+
+  .char-nav {
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .char-tab {
+    min-width: 38px;
+    height: 38px;
+    padding: 0 6px;
+    border-radius: 10px;
+    border: 2.5px solid var(--card-border);
+    background: #FFFFFF;
+    font-size: 20px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.12s, background 0.12s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+  .char-tab:hover { background: #FEF3C7; transform: translateY(-2px); }
+  .char-tab.active {
+    background: #A5D04A;
+    color: #1A1A1A;
+    box-shadow: 0 3px 0 var(--card-border);
+    transform: translateY(-2px);
+  }
+  .char-tab sup {
+    font-size: 11px;
+    font-family: "Microsoft JhengHei", sans-serif;
+    margin-left: 1px;
+    color: #B91C1C;
+  }
+
+  .toolbar-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .tool-btn {
+    border: 3px solid var(--card-border);
+    background: #FFFBEB;
+    border-radius: 12px;
+    padding: 6px 14px;
+    font-size: 15px;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 3px 0 var(--card-border);
+    transition: 0.1s;
+    font-family: "Microsoft JhengHei", sans-serif;
+    white-space: nowrap;
+  }
+  .tool-btn:active { transform: translateY(2px); box-shadow: none; }
+  .tool-btn.primary-reveal {
+    background: #FDE047;
+    color: #1A1A1A;
+  }
+  .tool-btn.primary-reveal.is-shown {
+    background: #E5E7EB;
+  }
+  .tool-btn.active-toggle { background: #FDE68A; }
+
+  /* 16:9 橫式主舞台（不捲動） */
+  .main-stage {
+    position: relative;
+    z-index: 10;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 24px 16px;
+    overflow: hidden;
+  }
+
+  .slide-board {
+    width: 100%;
+    max-width: 1400px;
+    height: 100%;
+    max-height: 750px;
+    background: #FFFFFF;
+    border: 6px solid var(--card-border);
+    border-radius: 28px;
+    box-shadow: 0 12px 0 rgba(26, 26, 26, 0.22);
+    display: grid;
+    grid-template-columns: 350px 1fr;
+    gap: 20px;
+    padding: 18px 24px;
+    position: relative;
+  }
+
+  /* 左欄：生字主卡區 */
+  .left-pane {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    border-right: 4px dashed #D1D5DB;
+    padding-right: 20px;
+    position: relative;
+  }
+
+  .char-hero-box {
+    flex: 1;
+    background: #FAFAF5;
+    border: 4px solid var(--card-border);
+    border-radius: 22px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    position: relative;
+    transition: transform 0.15s, background 0.2s;
+    padding: 12px;
+  }
+  .char-hero-box:hover { background: #FFFDF0; transform: scale(1.01); }
+  .char-hero-box:active { transform: scale(0.99); }
+
+  .click-hint-pill {
+    position: absolute;
+    top: 12px;
+    background: #FEF3C7;
+    border: 2px solid var(--card-border);
+    border-radius: 999px;
+    padding: 4px 14px;
+    font-size: 14px;
+    font-weight: bold;
+    color: #92400E;
+    font-family: "Microsoft JhengHei", sans-serif;
+  }
+
+  /* 標準國字＋右側直排注音排版 */
+  .ruby-char-hero {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .big-hanzi {
+    font-size: 152px;
+    line-height: 1.05;
+    font-weight: bold;
+    color: var(--text-black);
+  }
+  .zhuyin-col {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    line-height: 1.05;
+    font-weight: bold;
+    color: #374151;
+    position: relative;
+    min-width: 36px;
+  }
+  .zhuyin-tone-side {
+    position: absolute;
+    right: -17px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 28px;
+  }
+  .zhuyin-tone-dot {
+    font-size: 24px;
+    line-height: 0.6;
+    margin-bottom: 2px;
+  }
+
+  body.hide-zhuyin .zhuyin-col,
+  body.hide-zhuyin .mini-zhuyin {
+    visibility: hidden;
+  }
+
+  .left-controls {
+    margin-top: 12px;
+    display: flex;
+    gap: 10px;
+    z-index: 5;
+  }
+  .main-reveal-btn {
+    flex: 1;
+    background: #FDE047;
+    border: 3px solid var(--card-border);
+    border-radius: 14px;
+    padding: 11px 12px;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 4px 0 var(--card-border);
+    font-family: "Microsoft JhengHei", sans-serif;
+    transition: 0.1s;
+  }
+  .main-reveal-btn:active { transform: translateY(2px); box-shadow: none; }
+  .main-reveal-btn.is-shown {
+    background: #E5E7EB;
+  }
+
+  .speak-char-btn {
+    background: #DCFCE7;
+    border: 3px solid var(--card-border);
+    border-radius: 14px;
+    padding: 11px 14px;
+    font-size: 17px;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 4px 0 var(--card-border);
+    font-family: "Microsoft JhengHei", sans-serif;
+  }
+  .speak-char-btn:active { transform: translateY(2px); box-shadow: none; }
+
+  /* 左下角可愛小山羊與雛菊花叢 SVG */
+  .goat-mascot {
+    position: absolute;
+    bottom: -24px;
+    left: -26px;
+    width: 126px;
+    height: 126px;
+    z-index: 15;
+    pointer-events: none;
+    filter: drop-shadow(0 4px 4px rgba(0,0,0,0.15));
+  }
+
+  /* 右欄：造詞與意思區（支援 4 張 2x2 或 5 張自適應排版） */
+  .right-pane {
+    position: relative;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* 隱藏造詞時的覆蓋提示卡片 */
+  .words-curtain {
+    position: absolute;
+    inset: 0;
+    background: #F9FAFB;
+    border: 4px dashed #9CA3AF;
+    border-radius: 22px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    z-index: 12;
+    cursor: pointer;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+  }
+  .words-curtain.hidden {
+    opacity: 0;
+    pointer-events: none;
+    transform: scale(0.98);
+  }
+  .curtain-icon {
+    font-size: 56px;
+  }
+  .curtain-title {
+    font-size: 28px;
+    font-weight: bold;
+    color: #374151;
+    font-family: "Microsoft JhengHei", sans-serif;
+  }
+  .curtain-btn {
+    background: #FDE047;
+    border: 3px solid var(--card-border);
+    border-radius: 16px;
+    padding: 12px 28px;
+    font-size: 21px;
+    font-weight: bold;
+    color: #1A1A1A;
+    box-shadow: 0 5px 0 var(--card-border);
+    font-family: "Microsoft JhengHei", sans-serif;
+    cursor: pointer;
+  }
+
+  .words-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+    gap: 14px;
+    height: 100%;
+  }
+  .words-grid.five-items {
+    grid-template-columns: repeat(6, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+  }
+  .words-grid.five-items .word-card:nth-child(1),
+  .words-grid.five-items .word-card:nth-child(2) {
+    grid-column: span 3;
+  }
+  .words-grid.five-items .word-card:nth-child(3),
+  .words-grid.five-items .word-card:nth-child(4),
+  .words-grid.five-items .word-card:nth-child(5) {
+    grid-column: span 2;
+  }
+
+  .word-card {
+    background: #FFFDF9;
+    border: 4px solid var(--card-border);
+    border-radius: 20px;
+    padding: 14px 18px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    cursor: pointer;
+    position: relative;
+    transition: transform 0.15s ease, background 0.15s ease;
+    box-shadow: 0 5px 0 rgba(26,26,26,0.12);
+  }
+  .word-card:hover {
+    background: #FEFCE8;
+    transform: translateY(-2px);
+  }
+
+  .word-title-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-bottom: 8px;
+    padding-bottom: 6px;
+    border-bottom: 2px dashed #E5E7EB;
+  }
+
+  .word-def-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 2px;
+    line-height: 1.45;
+  }
+
+  /* 詞語與解釋字元＋注音單元 */
+  .char-unit {
+    display: inline-flex;
+    align-items: center;
+    margin-right: 3px;
+  }
+  .word-title-row .hanzi-txt {
+    font-size: 35px;
+    font-weight: bold;
+    color: var(--word-red);
+  }
+  .word-def-row .hanzi-txt {
+    font-size: 24px;
+    font-weight: bold;
+    color: var(--text-black);
+  }
+  .words-grid.five-items .word-def-row .hanzi-txt {
+    font-size: 21px;
+  }
+  .punct-txt {
+    font-size: 24px;
+    font-weight: bold;
+    color: var(--text-black);
+    margin-right: 3px;
+  }
+
+  .mini-zhuyin {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    line-height: 1.02;
+    font-weight: bold;
+    color: #4B5563;
+    margin-left: 1px;
+    position: relative;
+    min-width: 13px;
+  }
+  .word-title-row .mini-zhuyin {
+    font-size: 13px;
+    color: #991B1B;
+    min-width: 15px;
+  }
+  .mini-tone-side {
+    position: absolute;
+    right: -7px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 11px;
+  }
+  .mini-tone-dot {
+    font-size: 10px;
+    line-height: 0.6;
+  }
+
+  /* 底部快捷鍵與換頁列 */
+  .bottom-footer {
+    position: relative;
+    z-index: 20;
+    padding: 0 28px 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: "Microsoft JhengHei", sans-serif;
+    font-size: 14px;
+    font-weight: bold;
+    color: #1F2937;
+  }
+  .nav-arrows {
+    display: flex;
+    gap: 10px;
+  }
+  .nav-arrow-btn {
+    background: #FFFFFF;
+    border: 3px solid var(--card-border);
+    border-radius: 12px;
+    padding: 5px 16px;
+    font-size: 15px;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 3px 0 var(--card-border);
+  }
+  .nav-arrow-btn:active { transform: translateY(2px); box-shadow: none; }
+</style>
+</head>
+<body>
+
+  <!-- 牧場背景 -->
+  <div class="pasture-bg">
+    <div class="cloud cloud-1"></div>
+    <div class="cloud cloud-2"></div>
+    <div class="hill-back"></div>
+    <div class="hill-front"></div>
+  </div>
+
+  <!-- 頂部生字選單與功能列 -->
+  <header class="top-bar">
+    <div class="top-row-main">
+      <div class="lesson-badge">
+        <span>🐑 去農場玩</span>
+        <div class="group-pills">
+          <button class="group-pill active" id="filterAll" onclick="setFilter('all')">全部 (19字)</button>
+          <button class="group-pill" id="filterPart1" onclick="setFilter('part1')">群～遠 (9字)</button>
+          <button class="group-pill" id="filterPart2" onclick="setFilter('part2')">景～假 (10字)</button>
+        </div>
+      </div>
+
+      <div class="toolbar-actions">
+        <button class="tool-btn primary-reveal" id="topRevealBtn" onclick="toggleWordsVisibility()">👁️ 顯示全部造詞</button>
+        <button class="tool-btn" id="zhuyinBtn" onclick="toggleZhuyin()">ㄅㄆㄇ 注音開關</button>
+      </div>
+    </div>
+
+    <div class="char-nav" id="charNav"></div>
+  </header>
+
+  <!-- 16:9 橫式主舞台 -->
+  <main class="main-stage">
+    <div class="slide-board">
+      
+      <!-- 左下角小山羊與雛菊花叢插畫 -->
+      <svg class="goat-mascot" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+        <path d="M40,60 C25,40 55,20 80,32 C100,12 140,18 150,42 C178,48 188,82 172,108 C186,135 168,172 138,174 C118,190 80,188 64,170 C34,172 16,142 30,115 C14,92 22,68 40,60 Z" fill="#8BC34A" stroke="#2E3B1F" stroke-width="5"/>
+        <ellipse cx="104" cy="116" rx="44" ry="40" fill="#FFFFFF" stroke="#2E3B1F" stroke-width="5"/>
+        <circle cx="96" cy="76" r="36" fill="#FFFFFF" stroke="#2E3B1F" stroke-width="5"/>
+        <path d="M76,46 C68,26 82,18 88,38" fill="#BCAAA4" stroke="#2E3B1F" stroke-width="4" stroke-linecap="round"/>
+        <path d="M110,44 C118,24 132,26 122,46" fill="#BCAAA4" stroke="#2E3B1F" stroke-width="4" stroke-linecap="round"/>
+        <ellipse cx="56" cy="76" rx="12" ry="7" transform="rotate(-20 56 76)" fill="#FFFFFF" stroke="#2E3B1F" stroke-width="4"/>
+        <ellipse cx="136" cy="72" rx="12" ry="7" transform="rotate(20 136 72)" fill="#FFFFFF" stroke="#2E3B1F" stroke-width="4"/>
+        <circle cx="80" cy="78" r="4" fill="#2E3B1F"/>
+        <circle cx="112" cy="76" r="4" fill="#2E3B1F"/>
+        <ellipse cx="70" cy="87" rx="6" ry="3.5" fill="#FFAB91"/>
+        <ellipse cx="122" cy="85" rx="6" ry="3.5" fill="#FFAB91"/>
+        <path d="M92,86 Q96,91 100,86" fill="none" stroke="#2E3B1F" stroke-width="3.5" stroke-linecap="round"/>
+        <ellipse cx="64" cy="112" rx="12" ry="8" fill="#D7CCC8" stroke="#2E3B1F" stroke-width="4"/>
+        <ellipse cx="144" cy="102" rx="12" ry="8" fill="#D7CCC8" stroke="#2E3B1F" stroke-width="4"/>
+        <ellipse cx="88" cy="155" rx="9" ry="11" fill="#D7CCC8" stroke="#2E3B1F" stroke-width="4"/>
+        <ellipse cx="118" cy="155" rx="9" ry="11" fill="#D7CCC8" stroke="#2E3B1F" stroke-width="4"/>
+        <g transform="translate(42,48)"><circle r="9" fill="#FFF" stroke="#2E3B1F" stroke-width="2.5"/><circle r="4" fill="#FBC02D"/></g>
+        <g transform="translate(152,44)"><circle r="9" fill="#FFF" stroke="#2E3B1F" stroke-width="2.5"/><circle r="4" fill="#FBC02D"/></g>
+        <g transform="translate(34,138)"><circle r="9" fill="#FFF" stroke="#2E3B1F" stroke-width="2.5"/><circle r="4" fill="#FBC02D"/></g>
+        <g transform="translate(162,144)"><circle r="9" fill="#FFF" stroke="#2E3B1F" stroke-width="2.5"/><circle r="4" fill="#FBC02D"/></g>
+      </svg>
+
+      <!-- 左欄：生字大字卡 -->
+      <section class="left-pane">
+        <div class="char-hero-box" onclick="speakCurrentChar()">
+          <div class="click-hint-pill">🔊 點擊生字可聽發音</div>
+          <div id="heroCharDisplay"></div>
+        </div>
+
+        <div class="left-controls">
+          <button class="main-reveal-btn" id="leftRevealBtn" onclick="toggleWordsVisibility()">👁️ 顯示全部造詞</button>
+          <button class="speak-char-btn" onclick="speakCurrentChar()">🔊 唸生字</button>
+        </div>
+      </section>
+
+      <!-- 右欄：造詞與意思（預設先隱藏，按一個鍵全部顯示） -->
+      <section class="right-pane">
+        <div class="words-curtain" id="wordsCurtain" onclick="showAllWords()">
+          <div class="curtain-icon">🙈</div>
+          <div class="curtain-title">造詞與意思已先隱藏</div>
+          <button class="curtain-btn">✨ 按此顯示全部造詞</button>
+        </div>
+        <div class="words-grid" id="wordsGrid"></div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- 底部操作說明與上一字／下一字 -->
+  <footer class="bottom-footer">
+    <div>💡 電腦快捷鍵：<kbd>空白鍵</kbd> 顯示／隱藏全部造詞 ｜ <kbd>←</kbd> <kbd>→</kbd> 切換生字 ｜ 點擊任一造詞卡可朗讀</div>
+    <div class="nav-arrows">
+      <button class="nav-arrow-btn" onclick="prevChar()">⬅️ 上一個生字</button>
+      <button class="nav-arrow-btn" onclick="nextChar()">下一個生字 ➡️</button>
+    </div>
+  </footer>
+
+<script>
+  const allLessonData = [
+    {
+      part: "part1", char: "群", zhuyin: "ㄑㄩㄣˊ",
+      words: [
+        { word: "成群", def: "聚集成群。" },
+        { word: "群居", def: "成群聚在一起。" },
+        { word: "群聚", def: "成群聚在一起。" },
+        { word: "合群", def: "與人相處融洽，樂於與人合作。" }
+      ]
+    },
+    {
+      part: "part1", char: "靜", zhuyin: "ㄐㄧㄥˋ",
+      words: [
+        { word: "靜靜的", def: "不發出聲音。" },
+        { word: "靜止", def: "休止不動。" },
+        { word: "平靜", def: "安定祥和。" },
+        { word: "冷靜", def: "理智而不感情用事。" }
+      ]
+    },
+    {
+      part: "part1", char: "抬", zhuyin: "ㄊㄞˊ",
+      words: [
+        { word: "抬頭", def: "把頭仰起。" },
+        { word: "抬手", def: "舉起手來。" },
+        { word: "抬高", def: "把物品或位置往上舉高。" },
+        { word: "抬價", def: "提高價錢。" }
+      ]
+    },
+    {
+      part: "part1", char: "非", zhuyin: "ㄈㄟ",
+      words: [
+        { word: "非常", def: "特別的。" },
+        { word: "非禮", def: "不合禮儀。" },
+        { word: "非法", def: "違法。" },
+        { word: "除非", def: "唯一的條件。" }
+      ]
+    },
+    {
+      part: "part1", char: "趣", zhuyin: "ㄑㄩˋ",
+      words: [
+        { word: "有趣", def: "覺得好玩的。" },
+        { word: "興趣", def: "可以感到趣味。" },
+        { word: "樂趣", def: "趣味、情趣。" },
+        { word: "趣事", def: "有趣味的事。" }
+      ]
+    },
+    {
+      part: "part1", char: "近", zhuyin: "ㄐㄧㄣˋ",
+      words: [
+        { word: "近看", def: "近距離觀看。" },
+        { word: "近期", def: "短時間之內。" },
+        { word: "近日", def: "最近幾天。" },
+        { word: "近視", def: "看不清楚遠處物體的視力現象。" }
+      ]
+    },
+    {
+      part: "part1", char: "堆", zhuyin: "ㄉㄨㄟ",
+      words: [
+        { word: "一堆", def: "好幾堆的意思。" },
+        { word: "堆肥", def: "把動物的排泄物和植物等混合，形成肥料。" },
+        { word: "堆積", def: "聚積堆高。" },
+        { word: "土堆", def: "高出地面的積土。" }
+      ]
+    },
+    {
+      part: "part1", char: "棉", zhuyin: "ㄇㄧㄢˊ",
+      words: [
+        { word: "棉花", def: "棉的果實成熟後，種子表面著生的纖毛。" },
+        { word: "棉花糖", def: "用糖絲捲成蓬鬆像棉花的糖果。" },
+        { word: "棉布", def: "棉紗織成的布。" },
+        { word: "棉被", def: "用棉花做胎的被子。" }
+      ]
+    },
+    {
+      part: "part1", char: "遠", zhuyin: "ㄩㄢˇ",
+      words: [
+        { word: "遠看", def: "遠距離觀看。" },
+        { word: "遠方", def: "遙遠的地方。" },
+        { word: "遠離", def: "遠遠離開。" },
+        { word: "遠足", def: "到郊外步行遊覽的活動。" }
+      ]
+    },
+    {
+      part: "part2", char: "景", zhuyin: "ㄐㄧㄥˇ",
+      words: [
+        { word: "風景畫", def: "風光景物美得像一幅畫。" },
+        { word: "美景", def: "優美的景色。" },
+        { word: "街景", def: "街道上的景色。" },
+        { word: "景色", def: "風光、景致。" }
+      ]
+    },
+    {
+      part: "part2", char: "忽", zhuyin: "ㄏㄨ",
+      words: [
+        { word: "忽然", def: "突然、出乎意料地。" },
+        { word: "忽略", def: "疏忽、不注意。" },
+        { word: "疏忽", def: "做事粗心大意。" },
+        { word: "忽視", def: "不在意、不重視。" }
+      ]
+    },
+    {
+      part: "part2", char: "聽", zhuyin: "ㄊㄧㄥ",
+      words: [
+        { word: "聽見", def: "聽到。" },
+        { word: "聽話", def: "順從。" },
+        { word: "聽課", def: "聽人講授課程。" },
+        { word: "聽說", def: "聽他人說。" }
+      ]
+    },
+    {
+      part: "part2", char: "揮", zhuyin: "ㄏㄨㄟ",
+      words: [
+        { word: "揮手", def: "擺動手掌示意。" },
+        { word: "揮灑", def: "灑落。" },
+        { word: "指揮", def: "發號施令。" },
+        { word: "揮拍", def: "揮動球拍。" }
+      ]
+    },
+    {
+      part: "part2", char: "慢", zhuyin: "ㄇㄢˋ",
+      words: [
+        { word: "慢慢", def: "程度、數量逐步減少。" },
+        { word: "慢跑", def: "以較慢的速度跑步。" },
+        { word: "緩慢", def: "不快、遲緩。" },
+        { word: "傲慢", def: "態度無禮。" }
+      ]
+    },
+    {
+      part: "part2", char: "依", zhuyin: "ㄧ",
+      words: [
+        { word: "依依不捨", def: "還想繼續留在某個地方，不想離開。" },
+        { word: "依靠", def: "靠著。" },
+        { word: "依然", def: "依舊。" },
+        { word: "依賴", def: "倚靠。" }
+      ]
+    },
+    {
+      part: "part2", char: "捨", zhuyin: "ㄕㄜˇ",
+      words: [
+        { word: "捨棄", def: "放棄、拋開。" },
+        { word: "施捨", def: "將財物送人。" },
+        { word: "捨不得", def: "愛惜不忍與之分離。" },
+        { word: "取捨", def: "採用與割捨。" }
+      ]
+    },
+    {
+      part: "part2", char: "放", zhuyin: "ㄈㄤˋ",
+      words: [
+        { word: "放到", def: "把物品安放在某處。" },
+        { word: "放假", def: "在規定的日期休息，不工作或不學習。" },
+        { word: "放大", def: "使面積、體積或聲音等變大。" },
+        { word: "放風", def: "監獄按時讓犯人在牢房外活動行走。" },
+        { word: "平放", def: "水平放置。" }
+      ]
+    },
+    {
+      part: "part2", char: "假", badge: "4", zhuyin: "ㄐㄧㄚˋ",
+      words: [
+        { word: "寒假", def: "學校在冬季所放的假期。" },
+        { word: "休假", def: "停止工作或學習，休息一段時間。" },
+        { word: "假日", def: "放假的日子。" },
+        { word: "度假", def: "以輕鬆悠閒的方式度過假期。" }
+      ]
+    },
+    {
+      part: "part2", char: "假", badge: "3", zhuyin: "ㄐㄧㄚˇ",
+      words: [
+        { word: "假裝", def: "故意做出某種動作或神情來掩飾真相。" },
+        { word: "假想", def: "憑空想像、假設。" },
+        { word: "假如", def: "如果、假使。" },
+        { word: "假髮", def: "用真髮或人造纖維製成的頭髮。" }
+      ]
+    }
+  ];
+
+  const zhuyinDict = {
+    "群":"ㄑㄩㄣˊ","成":"ㄔㄥˊ","聚":"ㄐㄩˋ","集":"ㄐㄧˊ","居":"ㄐㄩ","在":"ㄗㄞˋ","一":"ㄧ","起":"ㄑㄧˇ",
+    "合":"ㄏㄜˊ","與":"ㄩˇ","人":"ㄖㄣˊ","相":"ㄒㄧㄤ","處":"ㄔㄨˇ","融":"ㄖㄨㄥˊ","洽":"ㄑㄧㄚˋ","樂":"ㄌㄜˋ",
+    "於":"ㄩˊ","作":"ㄗㄨㄛˋ","靜":"ㄐㄧㄥˋ","的":"ㄉㄜ˙","不":"ㄅㄨˋ","發":"ㄈㄚ","出":"ㄔㄨ","聲":"ㄕㄥ",
+    "音":"ㄧㄣ","止":"ㄓˇ","休":"ㄒㄧㄡ","動":"ㄉㄨㄥˋ","平":"ㄆㄧㄥˊ","安":"ㄢ","定":"ㄉㄧㄥˋ","祥":"ㄒㄧㄤˊ",
+    "和":"ㄏㄜˊ","冷":"ㄌㄥˇ","理":"ㄌㄧˇ","智":"ㄓˋ","而":"ㄦˊ","感":"ㄍㄢˇ","情":"ㄑㄧㄥˊ","用":"ㄩㄥˋ",
+    "事":"ㄕˋ","抬":"ㄊㄞˊ","頭":"ㄊㄡˊ","把":"ㄅㄚˇ","仰":"ㄧㄤˇ","手":"ㄕㄡˇ","舉":"ㄐㄩˇ","來":"ㄌㄞˊ",
+    "高":"ㄍㄠ","物":"ㄨˋ","品":"ㄆㄧㄣˇ","或":"ㄏㄨㄛˋ","位":"ㄨㄟˋ","置":"ㄓˋ","往":"ㄨㄤˇ","上":"ㄕㄤˋ",
+    "價":"ㄐㄧㄚˋ","提":"ㄊㄧˊ","錢":"ㄑㄧㄢˊ","非":"ㄈㄟ","常":"ㄔㄤˊ","特":"ㄊㄜˋ","別":"ㄅㄧㄝˊ","禮":"ㄌㄧˇ",
+    "儀":"ㄧˊ","法":"ㄈㄚˇ","違":"ㄨㄟˊ","除":"ㄔㄨˊ","唯":"ㄨㄟˊ","條":"ㄊㄧㄠˊ","件":"ㄐㄧㄢˋ","趣":"ㄑㄩˋ",
+    "有":"ㄧㄡˇ","覺":"ㄐㄩㄝˊ","得":"ㄉㄜˊ","好":"ㄏㄠˇ","玩":"ㄨㄢˊ","興":"ㄒㄧㄥˋ","可":"ㄎㄜˇ","以":"ㄧˇ",
+    "到":"ㄉㄠˋ","味":"ㄨㄟˋ","近":"ㄐㄧㄣˋ","看":"ㄎㄢˋ","距":"ㄐㄩˋ","離":"ㄌㄧˊ","觀":"ㄍㄨㄢ","期":"ㄑㄧˊ",
+    "短":"ㄉㄨㄢˇ","時":"ㄕˊ","間":"ㄐㄧㄢ","之":"ㄓ","內":"ㄋㄟˋ","日":"ㄖˋ","最":"ㄗㄨㄟˋ","幾":"ㄐㄧˇ",
+    "天":"ㄊㄧㄢ","視":"ㄕˋ","清":"ㄑㄧㄥ","楚":"ㄔㄨˇ","遠":"ㄩㄢˇ","體":"ㄊㄧˇ","力":"ㄌㄧˋ","現":"ㄒㄧㄢˋ",
+    "象":"ㄒㄧㄤˋ","堆":"ㄉㄨㄟ","意":"ㄧˋ","思":"ㄙ˙","肥":"ㄈㄟˊ","排":"ㄆㄞˊ","泄":"ㄒㄧㄝˋ","植":"ㄓˊ",
+    "等":"ㄉㄥˇ","混":"ㄏㄨㄣˋ","形":"ㄒㄧㄥˊ","料":"ㄌㄧㄠˋ","積":"ㄐㄧ","土":"ㄊㄨˇ","地":"ㄉㄧˋ","面":"ㄇㄧㄢˋ",
+    "棉":"ㄇㄧㄢˊ","花":"ㄏㄨㄚ","果":"ㄍㄨㄛˇ","實":"ㄕˊ","熟":"ㄕㄡˊ","後":"ㄏㄡˋ","種":"ㄓㄨㄥˇ","子":"ㄗˇ",
+    "表":"ㄅㄧㄠˇ","著":"ㄓㄨㄛˊ","生":"ㄕㄥ","纖":"ㄒㄧㄢ","毛":"ㄇㄠˊ","糖":"ㄊㄤˊ","絲":"ㄙ","捲":"ㄐㄩㄢˇ",
+    "蓬":"ㄆㄥˊ","鬆":"ㄙㄨㄥ","像":"ㄒㄧㄤˋ","布":"ㄅㄨˋ","紗":"ㄕㄚ","織":"ㄓ","被":"ㄅㄟˋ","做":"ㄗㄨㄛˋ",
+    "胎":"ㄊㄞ","方":"ㄈㄤ","遙":"ㄧㄠˊ","開":"ㄎㄞ","足":"ㄗㄨˊ","郊":"ㄐㄧㄠ","外":"ㄨㄞˋ","步":"ㄅㄨˋ",
+    "行":"ㄒㄧㄥˊ","遊":"ㄧㄡˊ","覽":"ㄌㄢˇ","活":"ㄏㄨㄛˊ",
+    "景":"ㄐㄧㄥˇ","風":"ㄈㄥ","光":"ㄍㄨㄤ","美":"ㄇㄟˇ","幅":"ㄈㄨˊ","優":"ㄧㄡ","色":"ㄙㄜˋ","街":"ㄐㄧㄝ",
+    "道":"ㄉㄠˋ","致":"ㄓˋ","忽":"ㄏㄨ","然":"ㄖㄢˊ","突":"ㄊㄨˊ","乎":"ㄏㄨ","略":"ㄌㄩㄝˋ","疏":"ㄕㄨ",
+    "注":"ㄓㄨˋ","粗":"ㄘㄨ","心":"ㄒㄧㄣ","大":"ㄉㄚˋ","重":"ㄓㄨㄥˋ","聽":"ㄊㄧㄥ","見":"ㄐㄧㄢˋ","話":"ㄏㄨㄚˋ",
+    "順":"ㄕㄨㄣˋ","從":"ㄘㄨㄥˊ","課":"ㄎㄜˋ","講":"ㄐㄧㄤˇ","授":"ㄕㄡˋ","程":"ㄔㄥˊ","說":"ㄕㄨㄛ","他":"ㄊㄚ",
+    "揮":"ㄏㄨㄟ","擺":"ㄅㄞˇ","掌":"ㄓㄤˇ","灑":"ㄙㄚˇ","落":"ㄌㄨㄛˋ","指":"ㄓˇ","號":"ㄏㄠˋ","施":"ㄕ",
+    "令":"ㄌㄧㄥˋ","拍":"ㄆㄞ","球":"ㄑㄧㄡˊ","慢":"ㄇㄢˋ","度":"ㄉㄨˋ","數":"ㄕㄨˋ","量":"ㄌㄧㄤˋ","逐":"ㄓㄨˊ",
+    "減":"ㄐㄧㄢˇ","少":"ㄕㄠˇ","跑":"ㄆㄠˇ","較":"ㄐㄧㄠˋ","速":"ㄙㄨˋ","緩":"ㄏㄨㄢˇ","快":"ㄎㄨㄞˋ","遲":"ㄔˊ",
+    "傲":"ㄠˋ","態":"ㄊㄞˋ","無":"ㄨˊ","依":"ㄧ","捨":"ㄕㄜˇ","還":"ㄏㄞˊ","想":"ㄒㄧㄤˇ","繼":"ㄐㄧˋ","續":"ㄒㄩˋ",
+    "留":"ㄌㄧㄡˊ","某":"ㄇㄡˇ","個":"ㄍㄜ˙","靠":"ㄎㄠˋ","舊":"ㄐㄧㄡˋ","賴":"ㄌㄞˋ","倚":"ㄧˇ","棄":"ㄑㄧˋ",
+    "放":"ㄈㄤˋ","拋":"ㄆㄠ","將":"ㄐㄧㄤ","財":"ㄘㄞˊ","送":"ㄙㄨㄥˋ","愛":"ㄞˋ","惜":"ㄒㄧˊ","忍":"ㄖㄣˇ",
+    "分":"ㄈㄣ","取":"ㄑㄩˇ","採":"ㄘㄞˇ","割":"ㄍㄜ","假":"ㄐㄧㄚˋ","處":"ㄔㄨˋ","規":"ㄍㄨㄟ",
+    "息":"ㄒㄧˊ","工":"ㄍㄨㄥ","學":"ㄒㄩㄝˊ","習":"ㄒㄧˊ","使":"ㄕˇ","變":"ㄅㄧㄢˋ","監":"ㄐㄧㄢ",
+    "獄":"ㄩˋ","按":"ㄢˋ","讓":"ㄖㄤˋ","犯":"ㄈㄢˋ","牢":"ㄌㄠˊ","房":"ㄈㄤˊ","走":"ㄗㄡˇ","水":"ㄕㄨㄟˇ",
+    "寒":"ㄏㄢˊ","校":"ㄒㄧㄠˋ","冬":"ㄉㄨㄥ","季":"ㄐㄧˋ","所":"ㄙㄨㄛˇ","休":"ㄒㄧㄡ","停":"ㄊㄧㄥˊ","段":"ㄉㄨㄢˋ",
+    "輕":"ㄑㄧㄥ","悠":"ㄧㄡ","閒":"ㄒㄧㄢˊ","式":"ㄕˋ","過":"ㄍㄨㄛˋ","裝":"ㄓㄨㄤ","故":"ㄍㄨˋ",
+    "神":"ㄕㄣˊ","掩":"ㄧㄢˇ","飾":"ㄕˋ","真":"ㄓㄣ","憑":"ㄆㄧㄥˊ","空":"ㄎㄨㄥ","設":"ㄕㄜˋ","如":"ㄖㄨˊ",
+    "果":"ㄍㄨㄛˇ","髮":"ㄈㄚˇ","造":"ㄗㄠˋ","維":"ㄨㄟˊ","製":"ㄓˋ"
+  };
+
+  let currentFilter = "all";
+  let filteredList = [...allLessonData];
+  let currentIndex = 0;
+  let areWordsVisible = false;
+
+  function renderZhuyinHTML(zy, isHero = false) {
+    if (!zy) return "";
+    const toneMatch = zy.match(/[ˊˇˋ˙]$/);
+    const tone = toneMatch ? toneMatch[0] : "";
+    const symbols = zy.replace(/[ˊˇˋ˙]/g, "").split("");
+
+    if (isHero) {
+      let html = `<span class="zhuyin-col">`;
+      if (tone === "˙") html += `<span class="zhuyin-tone-dot">˙</span>`;
+      symbols.forEach(s => { html += `<span>${s}</span>`; });
+      if (tone && tone !== "˙") html += `<span class="zhuyin-tone-side">${tone}</span>`;
+      html += `</span>`;
+      return html;
+    } else {
+      let html = `<span class="mini-zhuyin">`;
+      if (tone === "˙") html += `<span class="mini-tone-dot">˙</span>`;
+      symbols.forEach(s => { html += `<span>${s}</span>`; });
+      if (tone && tone !== "˙") html += `<span class="mini-tone-side">${tone}</span>`;
+      html += `</span>`;
+      return html;
+    }
+  }
+
+  function renderAnnotatedText(text, customOverrides = {}) {
+    let out = "";
+    for (const ch of text) {
+      if (/[，。、：；！？（）]/.test(ch)) {
+        out += `<span class="punct-txt">${ch}</span>`;
+      } else {
+        const zy = customOverrides[ch] || zhuyinDict[ch] || "";
+        out += `<span class="char-unit"><span class="hanzi-txt">${ch}</span>${renderZhuyinHTML(zy, false)}</span>`;
+      }
+    }
+    return out;
+  }
+
+  function speakText(text) {
+    if (!("speechSynthesis" in window)) return;
+    window.speechSynthesis.cancel();
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.lang = "zh-TW";
+    utter.rate = 0.88;
+    window.speechSynthesis.speak(utter);
+  }
+
+  function speakCurrentChar() {
+    speakText(filteredList[currentIndex].char);
+  }
+
+  function setFilter(filter) {
+    currentFilter = filter;
+    document.getElementById("filterAll").classList.toggle("active", filter === "all");
+    document.getElementById("filterPart1").classList.toggle("active", filter === "part1");
+    document.getElementById("filterPart2").classList.toggle("active", filter === "part2");
+
+    if (filter === "all") {
+      filteredList = [...allLessonData];
+    } else {
+      filteredList = allLessonData.filter(item => item.part === filter);
+    }
+    currentIndex = 0;
+    initNav();
+    selectChar(0);
+  }
+
+  function initNav() {
+    const nav = document.getElementById("charNav");
+    nav.innerHTML = "";
+    filteredList.forEach((item, idx) => {
+      const btn = document.createElement("button");
+      btn.className = "char-tab" + (idx === currentIndex ? " active" : "");
+      btn.innerHTML = item.char + (item.badge ? `<sup>${item.badge}</sup>` : "");
+      btn.onclick = () => selectChar(idx);
+      nav.appendChild(btn);
+    });
+  }
+
+  function selectChar(idx) {
+    currentIndex = idx;
+    areWordsVisible = false;
+    updateVisibilityUI();
+
+    document.querySelectorAll(".char-tab").forEach((b, i) => {
+      b.classList.toggle("active", i === idx);
+    });
+
+    const item = filteredList[idx];
+
+    document.getElementById("heroCharDisplay").innerHTML = `
+      <div class="ruby-char-hero">
+        <span class="big-hanzi">${item.char}</span>
+        ${renderZhuyinHTML(item.zhuyin, true)}
+      </div>
+    `;
+
+    const grid = document.getElementById("wordsGrid");
+    grid.innerHTML = "";
+    grid.className = "words-grid" + (item.words.length === 5 ? " five-items" : "");
+
+    const charOverride = { [item.char]: item.zhuyin };
+
+    item.words.forEach((wObj) => {
+      const card = document.createElement("div");
+      card.className = "word-card";
+      card.innerHTML = `
+        <div class="word-title-row">${renderAnnotatedText(wObj.word, charOverride)}</div>
+        <div class="word-def-row">${renderAnnotatedText(wObj.def, charOverride)}</div>
+      `;
+      card.onclick = () => speakText(`${wObj.word}，${wObj.def}`);
+      grid.appendChild(card);
+    });
+  }
+
+  function showAllWords() {
+    areWordsVisible = true;
+    updateVisibilityUI();
+  }
+
+  function toggleWordsVisibility() {
+    areWordsVisible = !areWordsVisible;
+    updateVisibilityUI();
+  }
+
+  function updateVisibilityUI() {
+    const curtain = document.getElementById("wordsCurtain");
+    const topBtn = document.getElementById("topRevealBtn");
+    const leftBtn = document.getElementById("leftRevealBtn");
+
+    if (areWordsVisible) {
+      curtain.classList.add("hidden");
+      topBtn.innerText = "🙈 隱藏全部造詞";
+      topBtn.classList.add("is-shown");
+      leftBtn.innerText = "🙈 隱藏造詞";
+      leftBtn.classList.add("is-shown");
+    } else {
+      curtain.classList.remove("hidden");
+      topBtn.innerText = "👁️ 顯示全部造詞";
+      topBtn.classList.remove("is-shown");
+      leftBtn.innerText = "👁️ 顯示全部造詞";
+      leftBtn.classList.remove("is-shown");
+    }
+  }
+
+  function toggleZhuyin() {
+    document.body.classList.toggle("hide-zhuyin");
+    document.getElementById("zhuyinBtn").classList.toggle("active-toggle");
+  }
+
+  function prevChar() {
+    const nextIdx = (currentIndex - 1 + filteredList.length) % filteredList.length;
+    selectChar(nextIdx);
+  }
+
+  function nextChar() {
+    const nextIdx = (currentIndex + 1) % filteredList.length;
+    selectChar(nextIdx);
+  }
+
+  document.addEventListener("keydown", (e) => {
+    if (e.code === "Space") {
+      e.preventDefault();
+      toggleWordsVisibility();
+    } else if (e.code === "ArrowRight") {
+      nextChar();
+    } else if (e.code === "ArrowLeft") {
+      prevChar();
+    }
+  });
+
+  initNav();
+  selectChar(0);
+</script>
+</body>
+</html>
